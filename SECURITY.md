@@ -47,7 +47,7 @@ User savedUser = userRepository.save(user);
 4. Observe password stored as `MySecretPassword123` in plain text
 
 **Evidence:**  
-![Database showing plain text password](../screenshots/02-plaintext-password-database.png)
+![Database showing plain text password](screenshots/02-plaintext-password-database.png)
 
 *Screenshot shows user 'testuser' with password 'password123' stored in plain text in the USERS table.*
 
