@@ -46,7 +46,10 @@ User savedUser = userRepository.save(user);
 3. Execute query: `SELECT * FROM USERS;`
 4. Observe password stored as `MySecretPassword123` in plain text
 
-**Evidence:** See `screenshots/02-plaintext-password-database.png`
+**Evidence:**  
+![Database showing plain text password](../screenshots/02-plaintext-password-database.png)
+
+*Screenshot shows user 'testuser' with password 'password123' stored in plain text in the USERS table.*
 
 #### Impact
 - **Confidentiality Breach:** Database compromise exposes all user passwords

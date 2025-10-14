@@ -39,10 +39,14 @@ vulnbank-api/
 ## 🐛 Vulnerabilities Implemented
 
 ### 1. A02: Cryptographic Failures ⚠️
-**Status:** Implemented  
+**Status:** ✅ Implemented  
 **Location:** `AuthController.register()`  
 **Issue:** Passwords stored in plain text  
 **Evidence:** See `screenshots/02-plaintext-password-database.png`  
+
+**Proof:**
+![Plain Text Password in Database](screenshots/02-plaintext-password-database.png)
+
 **Impact:** If database is compromised, all passwords are exposed  
 **Fix:** (Will be implemented in secure branch)
 
