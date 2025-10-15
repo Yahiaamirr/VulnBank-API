@@ -32,7 +32,7 @@ vulnbank-api/
 
 ## 📊 Current Features
 - ✅ User Registration (POST /api/auth/register)
-- 🔜 User Login (vulnerable to SQL injection)
+- ✅ User Login (POST /api/auth/login) - **Vulnerable to SQL Injection** ⚠️
 - 🔜 Balance Check (broken access control)
 - 🔜 Money Transfer (missing authorization)
 
@@ -51,17 +51,30 @@ vulnbank-api/
 **Fix:** (Will be implemented in secure branch)
 
 ### 2. A08: Software and Data Integrity Failures ⚠️
-**Status:** Implemented  
+**Status:** ✅ Implemented  
 **Location:** `AuthController.register()`  
 **Issue:** No input validation, mass assignment possible  
 **Test:** Send `{"username":"hacker","balance":9999999}` to registration  
 **Impact:** Users can set their own balance, bypass business logic  
 **Fix:** (Will be implemented in secure branch)
 
+### 3. A03: SQL Injection ⚠️
+**Status:** ✅ Implemented  
+**Location:** `AuthController.login()`  
+**Issue:** Login endpoint uses string concatenation to build SQL queries  
+**Test:** Login with username `admin' OR '1'='1` and any password  
+**Evidence:** See `screenshots/04-sql-injection-bypass.png`  
+
+**Proof:**
+![SQL Injection Bypass](screenshots/04-sql-injection-bypass.png)
+
+**Impact:** Complete authentication bypass, access any account without password  
+**Fix:** (Will be implemented in secure branch)
+
 ---
 
 ## 🔐 Vulnerabilities To Be Implemented
-- [ ] SQL Injection (A03)
+- [x] SQL Injection (A03) ✅
 - [ ] Broken Access Control (A01)
 - [ ] Authentication Failures (A07)
 - [ ] Security Misconfiguration (A05)

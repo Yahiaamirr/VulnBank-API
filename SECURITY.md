@@ -26,7 +26,7 @@ User passwords are stored in the database without any hashing or encryption, vio
 
 #### Vulnerable Code
 **File:** `src/main/java/com/vulnbank/api/controller/AuthController.java`  
-**Lines:** 23-24
+**Method:** `register()`
 ```java
 // VULNERABILITY: Password stored in plain text
 User savedUser = userRepository.save(user);
@@ -112,7 +112,7 @@ The registration endpoint accepts raw User objects without validation, allowing 
 
 #### Vulnerable Code
 **File:** `src/main/java/com/vulnbank/api/controller/AuthController.java`  
-**Line:** 15
+**Method:** `register()`
 ```java
 @PostMapping("/register")
 public ResponseEntity<?> register(@RequestBody User user) {
@@ -179,12 +179,122 @@ public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
 
 ---
 
+### VULN-003: Injection - SQL Injection in Login
+
+**OWASP Category:** A03:2021 – Injection  
+**Severity:** 🔴 Critical  
+**CWE ID:** CWE-89 (SQL Injection)  
+**Status:** ✅ Implemented
+
+#### Description
+The login endpoint constructs SQL queries using string concatenation with unsanitized user input, allowing attackers to inject malicious SQL code and bypass authentication.
+
+#### Vulnerable Code
+**File:** `src/main/java/com/vulnbank/api/controller/AuthController.java`  
+**Method:** `login()`
+```java
+// VULNERABLE: String concatenation in SQL query
+String sql = "SELECT * FROM users WHERE username = '" + username + 
+             "' AND password = '" + password + "'";
+Query query = entityManager.createNativeQuery(sql, User.class);
+```
+
+#### Proof of Concept
+
+**Attack 1: Authentication Bypass**
+```json
+POST /api/auth/login
+{
+    "username": "admin' OR '1'='1",
+    "password": "anything"
+}
+```
+
+**Resulting SQL:**
+```sql
+SELECT * FROM users WHERE username = 'admin' OR '1'='1' AND password = 'anything'
+```
+
+**Result:** Login succeeds without valid password because `'1'='1'` is always true.
+
+**Attack 2: Comment-Based Bypass**
+```json
+POST /api/auth/login
+{
+    "username": "admin'--",
+    "password": "ignored"
+}
+```
+
+**Resulting SQL:**
+```sql
+SELECT * FROM users WHERE username = 'admin'--' AND password = 'ignored'
+```
+
+**Result:** Everything after `--` is commented out, password check is bypassed.
+
+**Evidence:**  
+![SQL Injection Bypass](screenshots/04-sql-injection-bypass.png)  
+![SQL Injection Console](screenshots/05-sql-injection-console.png)
+
+#### Impact
+- **Critical Authentication Bypass:** Access any account without password
+- **Data Exfiltration:** Attackers can extract entire database
+- **Data Manipulation:** Can update or delete records
+- **Privilege Escalation:** Access admin accounts
+- **Complete System Compromise:** Possible remote code execution in some databases
+
+#### Attack Scenario
+```
+1. Attacker discovers login endpoint
+2. Attempts SQL injection: username = "admin' OR '1'='1"
+3. Successfully logs in as admin without password
+4. Accesses all user accounts and financial data
+5. Transfers funds, steals sensitive information
+6. Deletes audit logs to cover tracks
+```
+
+#### Remediation
+
+**Secure Implementation - Use JPA Repository:**
+```java
+@PostMapping("/login")
+public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    // Use parameterized query through JPA
+    Optional<User> userOpt = userRepository.findByUsername(request.getUsername());
+    
+    if (userOpt.isEmpty()) {
+        return ResponseEntity.status(401).body("Invalid credentials");
+    }
+    
+    User user = userOpt.get();
+    
+    // Verify password with BCrypt
+    if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        return ResponseEntity.status(401).body("Invalid credentials");
+    }
+    
+    // Generate JWT token
+    String token = jwtService.generateToken(user);
+    
+    return ResponseEntity.ok(new LoginResponse(token, user.getUsername()));
+}
+```
+
+**Key Security Improvements:**
+1. Uses JPA repository methods (parameterized queries)
+2. Password verified with BCrypt
+3. Returns JWT token instead of sensitive user data
+4. Generic error messages (don't reveal if username exists)
+5. No raw SQL construction
+
+#### References
+- [OWASP SQL Injection](https://owasp.org/www-community/attacks/SQL_Injection)
+- [CWE-89: SQL Injection](https://cwe.mitre.org/data/definitions/89.html)
+- [PortSwigger SQL Injection](https://portswigger.net/web-security/sql-injection)
+
 ## Vulnerabilities To Be Implemented
 
-### 🔜 VULN-003: Injection - SQL Injection in Login
-**OWASP:** A03:2021  
-**Severity:** 🔴 Critical  
-**Status:** ⏳ Pending
 
 ### 🔜 VULN-004: Broken Access Control
 **OWASP:** A01:2021  
